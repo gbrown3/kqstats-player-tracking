@@ -1,0 +1,5 @@
+# Non-Versioned requirements
+
+flask
+flask-socketio
+eventlet

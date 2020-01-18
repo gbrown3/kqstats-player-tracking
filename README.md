@@ -29,9 +29,7 @@ You should now see `(venv)` before each line of your command line prompt.
 
 3. With your virtual environment activated, install flask, socketio, and eventlet (which is required for socketio)
 ```
-pip install flask
-pip install flask-socketio --user
-pip install eventlet --user
+pip install -r requirements.txt
 ```
 NOTE: You might not need to use the `--user` flag when installing SocketIO and Eventlet. I needed to in both cases, which is why I'm making it the default.
 
