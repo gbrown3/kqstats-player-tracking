@@ -9,9 +9,9 @@ This service is intended to be used in tandem with the `develop` branch of [kqst
 
 ## Tech Stack
 
-- Flask, the simple yet powerful Python server framework
-- Socketio, for async communication with the frontend
-- Jinja2, for basic webpage templating
+- [Flask](http://flask.palletsprojects.com/en/1.1.x/quickstart/), the simple yet powerful Python server framework
+- [Socketio](https://socket.io/docs/client-api/) and [Flask-Socketio](https://flask-socketio.readthedocs.io/en/latest/), for async communication with the frontend
+- [Jinja2](https://jinja.palletsprojects.com/en/2.10.x/), for basic webpage templating
 
 ## Environment Setup
 1. Clone this repository
@@ -27,7 +27,7 @@ python3 -m venv venv
 ```
 You should now see `(venv)` before each line of your command line prompt.  
 
-3. With your virtual environment activated, install flask, socketio, and the eventlet extension
+3. With your virtual environment activated, install flask, socketio, and eventlet (which is required for socketio)
 ```
 pip install flask
 pip install flask-socketio --user
