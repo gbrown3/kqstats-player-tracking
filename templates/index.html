@@ -1,8 +1,82 @@
 <!DOCTYPE html>
 <html>
+    <head>
+        <script type="text/javascript" src="{{ url_for('static', filename='packages/jquery.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='packages/socket.io.js') }}"></script>
+    </head>
     <body>
         <h1>
             KQ Stats Tracker
         </h1>
+
+        <div id="prompt">
+            <h2 id="prompt_title"></h2>
+            <div id="inputs">
+
+                <div id="username_prompt">
+                    <input>
+                    <button>Submit</button>
+                </div>
+
+                <div id="team_select_prompt">
+                    <button>Gold</button>
+                    <button>Blue</button>
+                </div>
+
+
+                <div id="character_select_prompt">
+                    <button id="queen_button">
+                        <img src="" alt="Queen">
+                    </button>
+
+                    <button id="stripes_button">
+                        <img src="" alt="Stripes">
+                    </button>
+
+                    <button id="abs_button">
+                        <img src="" alt="Abs">
+                    </button>
+
+                    <button id="skull_button">
+                        <img src="" alt="Skull">
+                    </button>
+
+                    <button id="checkers_button">
+                        <img src="" alt="Checkers">
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <script>
+            var socket = io.connect(document.domain + ':' + location.port);
+            var user = "{{ user }}"
+
+            if ( "{{ user }}" == "") {
+                console.log("No prior username found");
+
+                $("#prompt_title").text("Enter a name");
+                $("#username_prompt").css("dislay: block;");    
+            }
+            else {
+                $("#prompt_title").text("Which team are you on?");
+                $("#team_select_prompt").css("dislay: block;");
+
+            }
+
+            // Callbacks
+            $("#username_prompt button").click(function() {
+                user = $("#username_prompt input").val();
+                console.log(user);
+            });
+
+            $("#team_select_prompt button").click(event, function() {
+                console.log(event.srcElement.innerText);
+                // TODO: figure out which button was pressed
+                // and set the image srcs of the character buttons
+                // accordingly
+            });
+        </script>
     </body>
 </html>

@@ -10,7 +10,12 @@ game_stats = []
 
 @app.route('/')
 def index():
-    return render_template("index.html")
+
+    # TODO: Check if a cookie is present with the user's name. 
+    # If so, use that. Otherwise pass in an empty string.
+    user = ""
+
+    return render_template("index.html", user=user)
 
 @app.route('/stats', methods=["POST"])
 def stats():
