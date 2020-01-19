@@ -2,10 +2,20 @@ from flask import Flask, render_template, make_response, request, jsonify
 from flask_socketio import SocketIO, emit
 import json
 
+from util import player_selection_processor
+
 app = Flask(__name__)
 socketio = SocketIO(app, ping_interval=1, ping_timeout=3, transports=['websocket']) 
 
-players = {}
+# Stores list of stats for each player
+# Key = username, Value = list of endgame stats. 
+playerstats = {}
+
+# Players that are currently in a game (and will expect stats at the end)
+# Key = character being played, Value = username
+active_players = {}
+
+# Full stat lists for each game, agnostic of actual players
 game_stats = []
 
 @app.route('/')
@@ -30,6 +40,19 @@ def player_selection():
     if player_selection == None:
         player_selection = {}
 
+    username = player_selection[player_selection_processor.USER_KEY]
+    character = player_selection_processor.get_character_from_json(player_selection)
+
+    print("User:")
+    print(username)
+    print("Character: ")
+    print(character)
+
+    if username in playerstats.keys():
+        playerstats[username] = []
+
+    active_players[character] = username
+
     return make_response(player_selection)
 
 @app.route('/stats', methods=["POST"])
@@ -38,8 +61,8 @@ def stats():
     Handles incoming stats and events from kqstats 
     (the service that connects directly to the cab)
     """
-    # TODO: Do some processing to connect player names to game characters
-    # TODO: Send processed data to firebase to store
+    # TODO: get json in a normal way once kqstats changes 
+    # (see comment below for more deets)
 
     # Using XMLHttpRequest on kqstats isn't sending the content type
     # correctly for some reason, which is why we need to to add this 
@@ -59,14 +82,32 @@ def stats():
     print("Request received:")
     print(request)
 
+    # Save the general game stats. Will be useful for doing analysis 
+    # on different cabinets/controls for each character (ie blue abs dies a lot)
     game_stats.append(stats)
+
+    # Save the player-specific stats
+    for character in stats.keys():
+
+        # Determine if anyone is currently playing this character
+        player = active_players.get(character, None)
+
+        # If so, save their specific stats.
+        if player != None:
+            playerstats[player].append(stats[character])
+
+    # TODO: only reset active_players when we reach a bonus map (end of set)
+    active_players = {}
+
+    # TODO: Send playerstats to firebase to store
+    # maybe also send a websocket update to /viewstats to get updated info?
 
     return make_response(stats)
 
 @app.route('/viewstats', methods=['GET'])
 def view_stats():
 
-    return render_template("view_stats.html", game_stats=game_stats)    
+    return render_template("view_stats.html", game_stats=game_stats)
 
 
 if __name__ == '__main__':
