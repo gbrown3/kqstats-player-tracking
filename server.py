@@ -17,6 +17,21 @@ def index():
 
     return render_template("index.html", user=user)
 
+@app.route('/playerselection', methods=["POST"])
+def player_selection():
+    """
+    Responsible for handling incoming player character selections
+    and connecting user data to the actual game stats.
+    """
+
+    player_selection = request.json
+    print(player_selection)
+
+    if player_selection == None:
+        player_selection = {}
+
+    return make_response(player_selection)
+
 @app.route('/stats', methods=["POST"])
 def stats():
     """

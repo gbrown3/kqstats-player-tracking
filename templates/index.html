@@ -110,15 +110,27 @@
 
             $('#character_select_prompt button').click(event, function() {
 
-                let buttonId = $(this).attr("id");
-
-                // Remove "_button" from the end of the id
-                let character = normalizeButtonId(buttonId);
-
+                let character = normalizeButtonId($(this).attr("id"));
                 console.log(character);
 
-                // TODO: send POST or socketio event to server
-                // saying which character the user selected
+                let payload = 
+                {
+                    "team": team,
+                    "character": character,
+                    "user": user
+                }
+
+                $.ajax({
+                    url: window.location.href + 'playerselection',
+                    type: 'POST',
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (data) {
+                        // Redirect to stats view after sending player info
+                        window.location.href = '/viewstats'
+                    }
+                });
             
             });
 
