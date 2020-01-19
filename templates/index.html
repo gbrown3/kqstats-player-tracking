@@ -3,6 +3,16 @@
     <head>
         <script type="text/javascript" src="{{ url_for('static', filename='packages/jquery.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='packages/socket.io.js') }}"></script>
+
+        <style>
+            .kqprompt {
+                display: none;
+            }
+
+            button {
+                display: block;
+            }
+        </style>
     </head>
     <body>
         <h1>
@@ -13,18 +23,18 @@
             <h2 id="prompt_title"></h2>
             <div id="inputs">
 
-                <div id="username_prompt">
+                <div id="username_prompt" class="kqprompt">
                     <input>
                     <button>Submit</button>
                 </div>
 
-                <div id="team_select_prompt">
-                    <button>Gold</button>
-                    <button>Blue</button>
+                <div id="team_select_prompt" class="kqprompt">
+                    <button id="gold_button">Gold</button>
+                    <button id="blue_button">Blue</button>
                 </div>
 
 
-                <div id="character_select_prompt">
+                <div id="character_select_prompt" class="kqprompt">
                     <button id="queen_button">
                         <img src="" alt="Queen">
                     </button>
@@ -50,18 +60,23 @@
         </div>
 
         <script>
+            let USERNAME_PROMPT_TITLE = "Enter a name";
+            let TEAM_PROMPT_TITLE = "Which team are you on?";
+            let CHAR_PROMPT_TITLE = "Who are you?";
+
             var socket = io.connect(document.domain + ':' + location.port);
             var user = "{{ user }}"
+            var team  = "";
 
             if ( "{{ user }}" == "") {
                 console.log("No prior username found");
 
-                $("#prompt_title").text("Enter a name");
-                $("#username_prompt").css("dislay: block;");    
+                $("#prompt_title").text(USERNAME_PROMPT_TITLE);
+                $("#username_prompt").show();  
             }
             else {
-                $("#prompt_title").text("Which team are you on?");
-                $("#team_select_prompt").css("dislay: block;");
+                $("#prompt_title").text(TEAM_PROMPT_TITLE);
+                $("#team_select_prompt").show();
 
             }
 
@@ -69,14 +84,50 @@
             $("#username_prompt button").click(function() {
                 user = $("#username_prompt input").val();
                 console.log(user);
+
+                // TODO: apply some constraints to usernames 
+                // ie can't be "", only alphanumeric chars
+                // and inform user of rules and prevent them from continuing
+                // until they pick a suitable name.
+
+                $("#username_prompt").hide();
+                $("#team_select_prompt").show();
+                $("#prompt_title").text(TEAM_PROMPT_TITLE);
             });
 
             $("#team_select_prompt button").click(event, function() {
-                console.log(event.srcElement.innerText);
-                // TODO: figure out which button was pressed
-                // and set the image srcs of the character buttons
-                // accordingly
+                // TODO: set the image srcs of the character buttons
+                // according to which team was selected
+                team = normalizeButtonId( $(this).attr("id") );
+                console.log(team);
+
+                $("#team_select_prompt").hide();
+                $("#character_select_prompt").show();
+
+                // TODO: update CSS and clickability of buttons so that 
+                // characters that are already selceted can't be selected again.
             });
+
+            $('#character_select_prompt button').click(event, function() {
+
+                let buttonId = $(this).attr("id");
+
+                // Remove "_button" from the end of the id
+                let character = normalizeButtonId(buttonId);
+
+                console.log(character);
+
+                // TODO: send POST or socketio event to server
+                // saying which character the user selected
+            
+            });
+
+            /**
+             * Removes "_button" from the end of a button_id
+             */
+            function normalizeButtonId(buttonId) {
+                return buttonId.slice(0, buttonId.length - 7);
+            }
         </script>
     </body>
 </html>
