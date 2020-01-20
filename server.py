@@ -75,7 +75,6 @@ def stats():
         stats = {}
         print("Empty stats set received")
 
-    # For now, just echo back what was received
     print("Stats received: ")
     print(stats)
 
@@ -102,7 +101,7 @@ def stats():
     # TODO: Send playerstats to firebase to store
     # maybe also send a websocket update to /viewstats to get updated info?
 
-    return make_response(stats)
+    return make_response()
 
 @app.route('/viewstats', methods=['GET'])
 def view_stats():

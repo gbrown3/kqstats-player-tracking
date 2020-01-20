@@ -5,12 +5,34 @@
         <script type="text/javascript" src="{{ url_for('static', filename='packages/socket.io.js') }}"></script>
 
         <style>
-            .kqprompt {
-                display: none;
+            @font-face {
+                font-family: arcade;
+                src: url(/static/PressStart2P-vaV7.ttf);
+            }
+            * {
+                font-family: arcade;
+                text-align: center;
+            }
+            body {
+                background-color: #161616;
             }
 
+
+            h1, h2 {
+                color: #EEEEEE
+            }
+            button {
+                color: #EEEEEE;
+                background-color: #161616;
+                border: none;
+            }
             button {
                 display: block;
+                margin: auto;
+            }
+            .kqprompt {
+                display: none;
+                text-align: center;
             }
         </style>
     </head>
