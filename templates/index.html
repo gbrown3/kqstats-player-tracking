@@ -5,6 +5,10 @@
         <script type="text/javascript" src="{{ url_for('static', filename='packages/socket.io.js') }}"></script>
 
         <style>
+           /*
+           * Arcade text font taken from here:
+           * https://www.fontspace.com/codeman38/press-start-2p
+           */
             @font-face {
                 font-family: arcade;
                 src: url(/static/PressStart2P-vaV7.ttf);
@@ -23,12 +27,14 @@
             }
             button {
                 color: #EEEEEE;
-                background-color: #161616;
-                border: none;
+                background-color: #333333;
+                border-color: #000000;
+                border-width: 3px;
             }
             button {
                 display: block;
-                margin: auto;
+                margin: 10px auto;
+                padding: 5px;
             }
             .kqprompt {
                 display: none;
@@ -118,13 +124,17 @@
             });
 
             $("#team_select_prompt button").click(event, function() {
-                // TODO: set the image srcs of the character buttons
-                // according to which team was selected
+                
                 team = normalizeButtonId( $(this).attr("id") );
                 console.log(team);
 
+                // Set the image srcs of the character buttons
+                // according to which team was selected
+                setCharacterButtonImages(team);
+
                 $("#team_select_prompt").hide();
                 $("#character_select_prompt").show();
+                $("#prompt_title").text(CHAR_PROMPT_TITLE);
 
                 // TODO: update CSS and clickability of buttons so that 
                 // characters that are already selceted can't be selected again.
@@ -161,6 +171,22 @@
              */
             function normalizeButtonId(buttonId) {
                 return buttonId.slice(0, buttonId.length - 7);
+            }
+
+            /**
+             * Sets character button images based on which team
+             * a player is on.
+             */
+            function setCharacterButtonImages(team) {
+                let characters = ["queen", "stripes", "abs", "skull", "checkers"]
+
+                characters.forEach(function(character) {
+                    $(`#${character}_button img`).attr(
+                        "src",
+                        `/sprites/${team}_${character}.png`
+                        //"{{ url_for('static', filename='sprites/blue_queen.png') }}"
+                    );
+                });
             }
         </script>
     </body>
