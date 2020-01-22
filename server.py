@@ -27,6 +27,35 @@ def index():
 
     return render_template("index.html", user=user)
 
+@app.route('/players', methods=["GET"])
+def players():
+    """
+    Returns information about players, which can be narrowed down with
+    query params.
+
+    Query Params accepted:
+
+    active -- bool, if true then only stats for active players should be sent
+    """
+
+    active = request.args.get("active", False)
+
+    if active:
+        return make_response(active_players)
+    else:
+        return make_response(playerstats)
+
+@app.route('/player/<username>', methods=["GET"])
+def player(username):
+    """
+    Returns information about a specific player
+    """
+
+    player = playerstats.get(username, None)
+
+    if player == None:
+        return make_response(render_template("notfound.html", username=username), 404)
+
 @app.route('/playerselection', methods=["POST"])
 def player_selection():
     """
