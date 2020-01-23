@@ -51,10 +51,14 @@ def player(username):
     Returns information about a specific player
     """
 
-    player = playerstats.get(username, None)
+    stats = playerstats.get(username, None)
 
-    if player == None:
+    print(playerstats)
+
+    if stats == None:
         return make_response(render_template("notfound.html", username=username), 404)
+    else:
+        return make_response({username: stats})
 
 @app.route('/playerselection', methods=["POST"])
 def player_selection():
@@ -62,6 +66,8 @@ def player_selection():
     Responsible for handling incoming player character selections
     and connecting user data to the actual game stats.
     """
+    global active_players
+    global playerstats
 
     player_selection = request.json
     print(player_selection)
@@ -77,7 +83,7 @@ def player_selection():
     print("Character: ")
     print(character)
 
-    if username in playerstats.keys():
+    if username not in playerstats.keys():
         playerstats[username] = []
 
     active_players[character] = username
@@ -90,6 +96,8 @@ def stats():
     Handles incoming stats and events from kqstats 
     (the service that connects directly to the cab)
     """
+    global active_players
+
     # TODO: get json in a normal way once kqstats changes 
     # (see comment below for more deets)
 
@@ -97,7 +105,7 @@ def stats():
     # correctly for some reason, which is why we need to to add this 
     # force=True. Should be able to do this in a less wonky way once kqstats
     # is updated to use ajax or something like that.
-    stats = request.get_json(force=True)
+    stats = request.get_json(force=True)["gameStats"]
     if stats != None:
         game_stats.append(stats)
     else:
@@ -117,12 +125,17 @@ def stats():
     # Save the player-specific stats
     for character in stats.keys():
 
+        print("active_players: " + str(active_players))
+
         # Determine if anyone is currently playing this character
-        player = active_players.get(character, None)
+        player = active_players.get(int(character), None)
 
         # If so, save their specific stats.
         if player != None:
             playerstats[player].append(stats[character])
+            print(f"stats saved for player={player}")
+        else:
+            print(f"No one logged in as character with id={character}, so stats are saved generically")
 
     # TODO: only reset active_players when we reach a bonus map (end of set)
     active_players = {}
