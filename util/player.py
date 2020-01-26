@@ -4,6 +4,7 @@ class Player:
     """
     A person who has signed in and indicated that
     they are playing a specific character in a match of KQ
+    on the connected cab.
     """
 
     def __init__(self, username):

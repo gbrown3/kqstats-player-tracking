@@ -96,6 +96,8 @@
             var user = "{{ user }}"
             var team  = "";
 
+            var availableCharacters = {{ available_characters|tojson }};
+
             if ( "{{ user }}" == "") {
                 console.log("No prior username found");
 
@@ -111,7 +113,6 @@
             // Callbacks
             $("#username_prompt button").click(function() {
                 user = $("#username_prompt input").val();
-                console.log(user);
 
                 // TODO: apply some constraints to usernames 
                 // ie can't be "", only alphanumeric chars
@@ -126,7 +127,6 @@
             $("#team_select_prompt button").click(event, function() {
                 
                 team = normalizeButtonId( $(this).attr("id") );
-                console.log(team);
 
                 // Set the image srcs of the character buttons
                 // according to which team was selected
@@ -136,14 +136,12 @@
                 $("#character_select_prompt").show();
                 $("#prompt_title").text(CHAR_PROMPT_TITLE);
 
-                // TODO: update CSS and clickability of buttons so that 
-                // characters that are already selceted can't be selected again.
+                updateCharacterAvailability(team, availableCharacters);
             });
 
             $('#character_select_prompt button').click(event, function() {
 
                 let character = normalizeButtonId($(this).attr("id"));
-                console.log(character);
 
                 let payload = 
                 {
@@ -166,6 +164,36 @@
             
             });
 
+            // SocketIO event handlers
+            socket.on("character_selected", function(data) {
+
+                if (data.character === "" || data.team === "") {
+                    // TODO: More error-safe thing to do would be
+                    // to POST to /players?active=true and adjust buttons
+                    // using that value.
+                    console.log(
+                        "Data from 'character_selected' socketio event was badly formatted: "
+                        + JSON.stringify(data)
+                    );
+                    return;
+                }
+                else {
+                    availableCharacters = data;
+                    console.log("availableCharacters updated:");
+                    console.dir(JSON.stringify(availableCharacters, null, 4));
+
+                    // If the character buttons are visible (team has been selected)
+                    if(this.team !== "") {
+                        updateCharacterAvailability(team, availableCharacters);
+                    }
+                }
+            });
+
+            // TODO: add socketio event to handle when game has ended.
+            // For now, will just be used to reset player selections
+            // and make buttons clickable. In the future, could be used to prompt
+            // players and ask if they're still playing.
+
             /**
              * Removes "_button" from the end of a button_id
              */
@@ -186,6 +214,58 @@
                         `/static/sprites/${team}_${character}.png`
                     );
                 });
+            }
+
+            /**
+             * Enables/disables button styling and clickability
+             * based on whether the given character is available
+             * 
+             * @param team: String -> team selected by player
+             * @param availableCharacters: JsObject -> object with booleans indicating whether
+             * a given character is available
+             */ 
+            function updateCharacterAvailability(team, availableCharacters) {
+
+                // If player can see the character buttons
+                if (team === "gold" || team === "blue") {
+
+                    console.log("team: " + team);
+
+                    console.log("availableCharacters[team]");
+                    console.log(availableCharacters[team]);
+
+                    console.log("availableCharacters:");
+                    console.log(availableCharacters);
+
+                    Object.keys(availableCharacters[team]).forEach(function(character) {
+
+                        if (availableCharacters[team][character]) {
+                            enableCharacterButton(character);
+                        }
+                        else {
+                            disableCharacterButton(character);
+                        }
+
+                    });
+                }
+                else if (team === "") {
+                    console.log("team not selected yet, no button changes occurred");
+                }
+                else {
+                    console.log(`team value not recognized, team=${team}`);
+                }
+            }
+
+            function enableCharacterButton(character) {
+                $(`#${character}_button`)
+                .prop('disabled', false)
+                .css('opacity', 1);
+            }
+
+            function disableCharacterButton(character) {
+                $(`#${character}_button`)
+                .prop('disabled', true)
+                .css('opacity', 0.5);
             }
         </script>
     </body>

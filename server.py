@@ -3,6 +3,7 @@ from flask_socketio import SocketIO, emit
 import json
 
 from util import player_selection_processor
+from util import events
 
 app = Flask(__name__)
 socketio = SocketIO(app, ping_interval=1, ping_timeout=3, transports=['websocket']) 
@@ -18,6 +19,23 @@ active_players = {}
 # Full stat lists for each game, agnostic of actual players
 game_stats = []
 
+available_characters = {
+    'gold': {
+        'queen': True,
+        'stripes': True,
+        'abs': True,
+        'skull': True,
+        'checkers': True
+    },
+    'blue': {
+        'queen': True,
+        'stripes': True,
+        'abs': True,
+        'skull': True,
+        'checkers': True
+    }
+}
+
 @app.route('/')
 def index():
 
@@ -25,7 +43,13 @@ def index():
     # If so, use that. Otherwise pass in an empty string.
     user = ""
 
-    return render_template("index.html", user=user)
+    return make_response(
+        render_template(
+            "index.html", 
+            user=user, 
+            available_characters=available_characters
+        )
+    )
 
 @app.route('/players', methods=["GET"])
 def players():
@@ -62,6 +86,7 @@ def player_selection():
     Responsible for handling incoming player character selections
     and connecting user data to the actual game stats.
     """
+    global available_characters
 
     player_selection = request.json
     print(player_selection)
@@ -70,7 +95,7 @@ def player_selection():
         player_selection = {}
 
     username = player_selection[player_selection_processor.USER_KEY]
-    character = player_selection_processor.get_character_from_json(player_selection)
+    character = player_selection_processor.get_character_id_from_json(player_selection)
 
     print("User:")
     print(username)
@@ -81,6 +106,18 @@ def player_selection():
         playerstats[username] = []
 
     active_players[character] = username
+
+    available_characters = player_selection_processor.update_available_characters(
+        available_characters, character
+    )
+
+    # Asynchronously update FE about character selection,
+    # so there's less risk of two players trying to select the
+    # same character.
+    socketio.emit(
+        events.CHARACTER_SELECTED,
+        available_characters
+    )
 
     return make_response(player_selection)
 
