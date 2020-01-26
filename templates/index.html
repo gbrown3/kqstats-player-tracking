@@ -1,8 +1,264 @@
 <!DOCTYPE html>
 <html>
+    <head>
+        <script type="text/javascript" src="{{ url_for('static', filename='packages/jquery.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='packages/socket.io.js') }}"></script>
+
+        <style>
+           /*
+           * Arcade text font taken from here:
+           * https://www.fontspace.com/codeman38/press-start-2p
+           */
+            @font-face {
+                font-family: arcade;
+                src: url(/static/PressStart2P-vaV7.ttf);
+            }
+            * {
+                font-family: arcade;
+                text-align: center;
+            }
+            body {
+                background-color: #161616;
+            }
+
+
+            h1, h2 {
+                color: #EEEEEE
+            }
+            button {
+                color: #EEEEEE;
+                background-color: #333333;
+                border-color: #000000;
+                border-width: 3px;
+            }
+            button {
+                display: block;
+                margin: 10px auto;
+                padding: 5px;
+            }
+            .kqprompt {
+                display: none;
+                text-align: center;
+            }
+        </style>
+    </head>
     <body>
         <h1>
             KQ Stats Tracker
         </h1>
+
+        <div id="prompt">
+            <h2 id="prompt_title"></h2>
+            <div id="inputs">
+
+                <div id="username_prompt" class="kqprompt">
+                    <input>
+                    <button>Submit</button>
+                </div>
+
+                <div id="team_select_prompt" class="kqprompt">
+                    <button id="gold_button">Gold</button>
+                    <button id="blue_button">Blue</button>
+                </div>
+
+
+                <div id="character_select_prompt" class="kqprompt">
+                    <button id="queen_button">
+                        <img src="" alt="Queen">
+                    </button>
+
+                    <button id="stripes_button">
+                        <img src="" alt="Stripes">
+                    </button>
+
+                    <button id="abs_button">
+                        <img src="" alt="Abs">
+                    </button>
+
+                    <button id="skull_button">
+                        <img src="" alt="Skull">
+                    </button>
+
+                    <button id="checkers_button">
+                        <img src="" alt="Checkers">
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <script>
+            let USERNAME_PROMPT_TITLE = "Enter a name";
+            let TEAM_PROMPT_TITLE = "Which team are you on?";
+            let CHAR_PROMPT_TITLE = "Who are you?";
+
+            var socket = io.connect(document.domain + ':' + location.port);
+            var user = "{{ user }}"
+            var team  = "";
+
+            var availableCharacters = {{ available_characters|tojson }};
+
+            if ( "{{ user }}" == "") {
+                console.log("No prior username found");
+
+                $("#prompt_title").text(USERNAME_PROMPT_TITLE);
+                $("#username_prompt").show();  
+            }
+            else {
+                $("#prompt_title").text(TEAM_PROMPT_TITLE);
+                $("#team_select_prompt").show();
+
+            }
+
+            // Callbacks
+            $("#username_prompt button").click(function() {
+                user = $("#username_prompt input").val();
+
+                // TODO: apply some constraints to usernames 
+                // ie can't be "", only alphanumeric chars
+                // and inform user of rules and prevent them from continuing
+                // until they pick a suitable name.
+
+                $("#username_prompt").hide();
+                $("#team_select_prompt").show();
+                $("#prompt_title").text(TEAM_PROMPT_TITLE);
+            });
+
+            $("#team_select_prompt button").click(event, function() {
+                
+                team = normalizeButtonId( $(this).attr("id") );
+
+                // Set the image srcs of the character buttons
+                // according to which team was selected
+                setCharacterButtonImages(team);
+
+                $("#team_select_prompt").hide();
+                $("#character_select_prompt").show();
+                $("#prompt_title").text(CHAR_PROMPT_TITLE);
+
+                updateCharacterAvailability(team, availableCharacters);
+            });
+
+            $('#character_select_prompt button').click(event, function() {
+
+                let character = normalizeButtonId($(this).attr("id"));
+
+                let payload = 
+                {
+                    "team": team,
+                    "character": character,
+                    "user": user
+                }
+
+                $.ajax({
+                    url: window.location.href + 'playerselection',
+                    type: 'POST',
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (data) {
+                        // Redirect to stats view after sending player info
+                        window.location.href = '/viewstats'
+                    }
+                });
+            
+            });
+
+            // SocketIO event handlers
+            socket.on("character_selected", function(data) {
+
+                if (data.character === "" || data.team === "") {
+                    // TODO: More error-safe thing to do would be
+                    // to POST to /players?active=true and adjust buttons
+                    // using that value.
+                    console.log(
+                        "Data from 'character_selected' socketio event was badly formatted: "
+                        + JSON.stringify(data)
+                    );
+                    return;
+                }
+                else {
+                    availableCharacters = data;
+                    console.log("availableCharacters updated:");
+                    console.dir(JSON.stringify(availableCharacters, null, 4));
+
+                    // If the character buttons are visible (team has been selected)
+                    if(this.team !== "") {
+                        updateCharacterAvailability(team, availableCharacters);
+                    }
+                }
+            });
+
+            // TODO: add socketio event to handle when game has ended.
+            // For now, will just be used to reset player selections
+            // and make buttons clickable. In the future, could be used to prompt
+            // players and ask if they're still playing.
+
+            /**
+             * Removes "_button" from the end of a button_id
+             */
+            function normalizeButtonId(buttonId) {
+                return buttonId.slice(0, buttonId.length - 7);
+            }
+
+            /**
+             * Sets character button images based on which team
+             * a player is on.
+             */
+            function setCharacterButtonImages(team) {
+                let characters = ["queen", "stripes", "abs", "skull", "checkers"]
+
+                characters.forEach(function(character) {
+                    $(`#${character}_button img`).attr(
+                        "src",
+                        `/static/sprites/${team}_${character}.png`
+                    );
+                });
+            }
+
+            /**
+             * Enables/disables button styling and clickability
+             * based on whether the given character is available
+             * 
+             * @param team: String -> team selected by player
+             * @param availableCharacters: JsObject -> object with booleans indicating whether
+             * a given character is available
+             */ 
+            function updateCharacterAvailability(team, availableCharacters) {
+
+                // If player can see the character buttons
+                if (team === "gold" || team === "blue") {
+
+                    Object.keys(availableCharacters[team]).forEach(function(character) {
+
+                        if (availableCharacters[team][character]) {
+                            enableCharacterButton(character);
+                        }
+                        else {
+                            disableCharacterButton(character);
+                        }
+
+                    });
+                }
+                else if (team === "") {
+                    console.log("team not selected yet, no button changes occurred");
+                }
+                else {
+                    console.log(`team value not recognized, team=${team}`);
+                }
+            }
+
+            function enableCharacterButton(character) {
+                $(`#${character}_button`)
+                .prop('disabled', false)
+                .css('opacity', 1);
+            }
+
+            function disableCharacterButton(character) {
+                $(`#${character}_button`)
+                .prop('disabled', true)
+                .css('opacity', 0.5);
+            }
+        </script>
     </body>
 </html>
