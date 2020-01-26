@@ -142,7 +142,7 @@ def stats():
     # correctly for some reason, which is why we need to to add this 
     # force=True. Should be able to do this in a less wonky way once kqstats
     # is updated to use ajax or something like that.
-    stats = request.get_json(force=True)["gameStats"]
+    stats = request.get_json(force=True)
     if stats != None:
         game_stats.append(stats)
     else:
