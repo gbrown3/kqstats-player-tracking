@@ -2,8 +2,10 @@ from flask import Flask, render_template, make_response, request, jsonify
 from flask_socketio import SocketIO, emit
 import json
 
+from util.player import Player
 from util import player_selection_processor
 from util import events
+from util import errors
 
 app = Flask(__name__)
 socketio = SocketIO(app, ping_interval=1, ping_timeout=3, transports=['websocket']) 
@@ -83,6 +85,46 @@ def player(username):
         return make_response(render_template("notfound.html", username=username), 404)
     else:
         return make_response({username: stats})
+
+@app.route('/player/validate', methods=["POST"])        
+def validate_player_name():
+    """
+    Parses the request body to determine if a player name is valid.
+    Player names are valid if they meet the following conditions:
+    1. Fits character constraints defined in the Player class
+    2. Name is not already taken.
+
+    Response code will always be 200 OK, so detail error information
+    can be included if relevant.
+
+    If name is valid and hasn't already been taken, response will be 
+    of the form {"success": true}
+
+    Otherwise, the response will look like the following:
+    {"error": "<insert error message here>"}
+    """ 
+
+    name = request.json.get("name", None)
+
+    if name == None:
+        return make_response({'error': errors.MALFORMED_JSON}, 200)
+    else:
+        # If name is invalid, return an error
+        try:
+            Player.validate_name(name)
+        except ValueError as e:
+            print("Exception caught: " + str(e))
+            return make_response({'error': errors.INVALID_NAME}, 200)
+
+        # If name has already been used, return an error
+        # TODO: once data is stored in a database, this will need to be a database call
+        if name in playerstats:
+            return make_response({'error': f"The name '{name}' is already taken. Please choose another one."}, 200)
+
+        # If player name is valid and unused, return 200 OK
+        return make_response(jsonify({"success": True}))
+
+
 
 @app.route('/playerselection', methods=["POST"])
 def player_selection():

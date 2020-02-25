@@ -25,6 +25,12 @@
             h1, h2 {
                 color: #EEEEEE
             }
+
+            input {
+                background-color: #EEEEEE;
+                border-color: #EEEEEE;
+            }
+
             button {
                 color: #EEEEEE;
                 background-color: #333333;
@@ -112,16 +118,33 @@
 
             // Callbacks
             $("#username_prompt button").click(function() {
+
                 user = $("#username_prompt input").val();
+                let payload = {"name": user}
+                
+                $.ajax({
+                    url: window.location.href + 'player/validate',
+                    type: 'POST',
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (data) {
 
-                // TODO: apply some constraints to usernames 
-                // ie can't be "", only alphanumeric chars
-                // and inform user of rules and prevent them from continuing
-                // until they pick a suitable name.
+                        let error = data["error"] || ""
 
-                $("#username_prompt").hide();
-                $("#team_select_prompt").show();
-                $("#prompt_title").text(TEAM_PROMPT_TITLE);
+                        if (error !== "") {
+                            // Name is not usable, prompt user to change.
+                            $("#username_prompt input").select();
+                            alert(error);
+                        }
+                        else {
+                            // Name is usable, switch to character selection mode
+                            $("#username_prompt").hide();
+                            $("#team_select_prompt").show();
+                            $("#prompt_title").text(TEAM_PROMPT_TITLE);
+                        }
+                    }
+                });
             });
 
             $("#team_select_prompt button").click(event, function() {
