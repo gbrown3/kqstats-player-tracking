@@ -94,28 +94,32 @@ def validate_player_name():
     1. Fits character constraints defined in the Player class
     2. Name is not already taken.
 
-    Possible responses:
-    200 OK: player name fits the constraints and is available
-    400 Bad Input: player name didn't fit constraints, was already taken, 
-                   or request json was malformed. Includes response body with error message.
-    """
+    Response code will always be 200 OK, so detail error information
+    can be included if relevant.
+
+    If name is valid and hasn't already been taken, response will be 
+    of the form {"success": true}
+
+    Otherwise, the response will look like the following:
+    {"error": "<insert error message here>"}
+    """ 
 
     name = request.json.get("name", None)
 
     if name == None:
-        return make_response({'error': errors.MALFORMED_JSON}, 400)
+        return make_response({'error': errors.MALFORMED_JSON}, 200)
     else:
         # If name is invalid, return an error
         try:
             Player.validate_name(name)
         except ValueError as e:
             print("Exception caught: " + str(e))
-            return make_response({'error': errors.INVALID_NAME}, 400)
+            return make_response({'error': errors.INVALID_NAME}, 200)
 
         # If name has already been used, return an error
         # TODO: once data is stored in a database, this will need to be a database call
         if name in playerstats:
-            return make_response({'error': f"The name '{name}' is already taken. Please choose another one."}, 400)
+            return make_response({'error': f"The name '{name}' is already taken. Please choose another one."}, 200)
 
         # If player name is valid and unused, return 200 OK
         return make_response(jsonify({"success": True}))
