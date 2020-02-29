@@ -71,6 +71,26 @@ def players():
     else:
         return make_response(playerstats)
 
+@app.route('/players/reset', methods=["POST"])
+def reset_players():
+    """
+    Resets player selections - players will need to 
+    log back in and/or reselect the character they're playing as.
+    """        
+    global available_characters
+    global active_players
+
+    # Make all characters selectable again
+    for team in available_characters.keys():
+        for character in available_characters[team].keys():
+            available_characters[team][character] = True
+
+    # Reset active_players so stats aren't incorrectly attributed
+    # if no one else selects their character.
+    active_players = {}
+
+    return make_response({'success': True})
+
 @app.route('/player/<username>', methods=["GET"])
 def player(username):
     """
@@ -84,7 +104,7 @@ def player(username):
     if stats == None:
         return make_response(render_template("notfound.html", username=username), 404)
     else:
-        return make_response({username: stats})
+        return make_response(jsonify({username: stats}))
 
 @app.route('/player/validate', methods=["POST"])        
 def validate_player_name():
@@ -126,7 +146,7 @@ def validate_player_name():
 
 
 
-@app.route('/playerselection', methods=["POST"])
+@app.route('/player/selection', methods=["POST"])
 def player_selection():
     """
     Responsible for handling incoming player character selections
@@ -167,7 +187,7 @@ def player_selection():
         available_characters
     )
 
-    return make_response(player_selection)
+    return make_response(player_selection)    
 
 @app.route('/stats', methods=["POST"])
 def stats():
@@ -215,9 +235,6 @@ def stats():
             print(f"stats saved for player={player}")
         else:
             print(f"No one logged in as character with id={character}, so stats are saved generically")
-
-    # TODO: only reset active_players when we reach a bonus map (end of set)
-    active_players = {}
 
     # TODO: Send playerstats to firebase to store
     # maybe also send a websocket update to /viewstats to get updated info?
